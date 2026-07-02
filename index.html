@@ -5,98 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>筋トレ記録アプリ</title>
     <style>
-        /* 全体のリセットとモバイル対応の基盤 */
         * { box-sizing: border-box; }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            margin: 0;
-            padding: 10px;
-            background-color: #f4f7f6;
-            color: #333;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-        }
-
-        .container {
-            width: 100%;
-            max-width: 600px;
-        }
-
+        body { font-family: sans-serif; margin: 0; padding: 10px; background-color: #f4f7f6; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        .container { width: 100%; max-width: 600px; }
         h2 { text-align: center; color: #2c3e50; }
-
-        .form-group {
-            background: white;
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            margin-bottom: 20px;
-            overflow: hidden; /* はみ出し防止 */
-        }
-
-        label {
-            display: block;
-            font-size: 12px;
-            color: #7f8c8d;
-            margin: 8px 0 2px;
-        }
-
-        input, select {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 16px; /* スマホでの入力時ズーム防止 */
-            -webkit-appearance: none; /* iOSのスタイル解除 */
-            max-width: 100%;
-        }
-
-        .grid-inputs {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 10px;
-        }
-
-        button.save-btn {
-            width: 100%;
-            padding: 15px;
-            margin-top: 20px;
-            background-color: #27ae60;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        .log-item {
-            background: white;
-            padding: 12px 15px;
-            margin-bottom: 8px;
-            border-radius: 6px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
+        .form-group { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px; overflow: hidden; }
+        label { display: block; font-size: 12px; color: #7f8c8d; margin: 8px 0 2px; }
+        input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 16px; -webkit-appearance: none; max-width: 100%; }
+        .grid-inputs { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+        button.save-btn { width: 100%; padding: 15px; margin-top: 20px; background-color: #27ae60; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; }
+        .log-item { background: white; padding: 12px 15px; margin-bottom: 8px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; }
         .log-data { flex-grow: 1; padding-right: 10px; word-break: break-all; }
         .log-date { font-size: 12px; color: #7f8c8d; }
         .log-exercise { font-weight: bold; font-size: 16px; display: block; }
         .log-details { font-size: 14px; color: #555; }
-
-        button.delete-btn {
-            padding: 6px 12px;
-            background-color: #e74c3c;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            font-size: 12px;
-            flex-shrink: 0;
-        }
+        button.delete-btn { padding: 6px 12px; background-color: #e74c3c; color: white; border: none; border-radius: 4px; font-size: 12px; flex-shrink: 0; }
     </style>
 </head>
 <body>
@@ -112,22 +35,13 @@
                 <option value="">-- 選択してください --</option>
             </select>
 
-            <label>新しい種目名</label>
+            <label>種目名</label>
             <input type="text" id="exercise" placeholder="例: ベンチプレス">
 
             <div class="grid-inputs">
-                <div>
-                    <label>重量(kg)</label>
-                    <input type="number" id="weight" placeholder="0">
-                </div>
-                <div>
-                    <label>回数</label>
-                    <input type="number" id="reps" placeholder="0">
-                </div>
-                <div>
-                    <label>セット数</label>
-                    <input type="number" id="sets" placeholder="0">
-                </div>
+                <div><label>重量(kg)</label><input type="number" id="weight" value="0"></div>
+                <div><label>回数</label><input type="number" id="reps" value="0"></div>
+                <div><label>セット数</label><input type="number" id="sets" value="0"></div>
             </div>
 
             <button class="save-btn" onclick="saveLog()">記録を保存</button>
@@ -137,6 +51,7 @@
     </div>
 
     <script>
+        // 日付を初期化
         document.getElementById('date').valueAsDate = new Date();
 
         window.onload = () => { displayLogs(); updateExerciseList(); };
@@ -160,10 +75,31 @@
         function saveLog() {
             const date = document.getElementById('date').value;
             const exercise = document.getElementById('exercise').value;
-            if (!exercise) { alert('種目名を入力してください'); return; }
+            const weight = document.getElementById('weight').value;
+            const reps = document.getElementById('reps').value;
+            const sets = document.getElementById('sets').value;
 
-            const log = {
-                date: date,
-                exercise: exercise,
-                weight: parseFloat(document.getElementById('weight').value) || 0,
-                reps: parseInt(
+            if (!date || !exercise) {
+                alert('日付と種目名は必須です');
+                return;
+            }
+
+            const log = { date, exercise, weight, reps, sets };
+
+            let logs = JSON.parse(localStorage.getItem('myWorkoutLogs') || '[]');
+            logs.unshift(log);
+            localStorage.setItem('myWorkoutLogs', JSON.stringify(logs));
+            
+            updateExerciseList();
+            displayLogs();
+            
+            // 入力欄をクリア（日付はリセットせず現在のまま）
+            document.getElementById('exercise').value = '';
+            document.getElementById('weight').value = '0';
+            document.getElementById('reps').value = '0';
+            document.getElementById('sets').value = '0';
+        }
+
+        function deleteLog(index) {
+            if (!confirm('この記録を削除しますか？')) return;
+            let logs = JSON.parse(localStorage.getItem('myWorkoutLogs') || '[]');

@@ -42,7 +42,7 @@
             margin: 8px 0 2px;
         }
 
-        input, select {
+        input[type="text"], input[type="number"], input[type="date"], select {
             width: 100%;
             padding: 12px;
             border: 1px solid #ddd;
@@ -53,22 +53,29 @@
             display: block;
         }
 
-        /* ★自重チェックボックスのスタイル */
         .checkbox-container {
             display: flex;
             align-items: center;
-            margin: 10px 0;
+            margin: 15px 0;
             cursor: pointer;
+            font-size: 15px;
+            font-weight: bold;
+            color: #2c3e50;
         }
+        
         .checkbox-container input[type="checkbox"] {
-            width: auto;
-            margin-right: 8px;
-            transform: scale(1.2); /* スマホで押しやすいように少し大きく */
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+            cursor: pointer;
+            -webkit-appearance: checkbox !important;
+            appearance: checkbox !important;
         }
 
+        /* ★Gridレイアウトを調整：3列等幅ではなく、要素の有無に応じて柔軟に変わる設定に */
         .grid-inputs {
             display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
             gap: 10px;
         }
 
@@ -121,12 +128,12 @@
             <input type="date" id="date">
             
             <label>過去の種目から選択</label>
-            <select id="exerciseSelect" onchange="updateExerciseInput()">
+            <select id="exerciseSelect" onchange="handleExerciseSelect()">
                 <option value="">-- 選択してください --</option>
             </select>
 
             <label>種目名</label>
-            <input type="text" id="exercise" placeholder="例: ベンチプレス">
+            <input type="text" id="exercise" placeholder="例: ベンチプレス" oninput="fillLastValues(this.value)">
 
             <label class="checkbox-container">
                 <input type="checkbox" id="isBodyweight" onchange="toggleWeightInput()">
@@ -134,17 +141,17 @@
             </label>
 
             <div class="grid-inputs">
-                <div>
+                <div id="weightBox">
                     <label id="weightLabel">重量(kg)</label>
-                    <input type="number" id="weight" placeholder="0">
+                    <input type="number" id="weight" placeholder="kg">
                 </div>
                 <div>
                     <label>回数</label>
-                    <input type="number" id="reps" placeholder="0">
+                    <input type="number" id="reps" placeholder="回">
                 </div>
                 <div>
                     <label>セット数</label>
-                    <input type="number" id="sets" placeholder="0">
+                    <input type="number" id="sets" placeholder="セット">
                 </div>
             </div>
 
@@ -159,17 +166,17 @@
 
         window.onload = () => { displayLogs(); updateExerciseList(); };
 
-        // ★追加: 自重チェック時の入力欄制御
+        // ★変更: 「暗くする」から「表示・非表示を切り替える」に変更
         function toggleWeightInput() {
             const isChecked = document.getElementById('isBodyweight').checked;
+            const weightBox = document.getElementById('weightBox');
             const weightInput = document.getElementById('weight');
             
-            weightInput.disabled = isChecked;
             if (isChecked) {
-                weightInput.value = '';
-                weightInput.style.backgroundColor = '#e9ecef'; // グレーアウト
+                weightBox.style.display = 'none'; // 重量入力欄をまるごと非表示に
+                weightInput.value = '';           // 値を完全にクリア
             } else {
-                weightInput.style.backgroundColor = '#fff';
+                weightBox.style.display = 'block'; // 通常時は表示
             }
         }
 
@@ -184,9 +191,34 @@
             });
         }
 
-        function updateExerciseInput() {
+        function handleExerciseSelect() {
             const selectValue = document.getElementById('exerciseSelect').value;
-            if(selectValue) document.getElementById('exercise').value = selectValue;
+            if (selectValue) {
+                document.getElementById('exercise').value = selectValue;
+                fillLastValues(selectValue);
+            }
+        }
+
+        function fillLastValues(exerciseName) {
+            if (!exerciseName) return;
+
+            const logs = JSON.parse(localStorage.getItem('myWorkoutLogs') || '[]');
+            const lastLog = logs.find(log => log.exercise === exerciseName);
+
+            if (lastLog) {
+                document.getElementById('isBodyweight').checked = lastLog.isBodyweight || false;
+                
+                // チェック状態に合わせて非表示・表示を連動
+                toggleWeightInput();
+
+                if (lastLog.isBodyweight) {
+                    document.getElementById('weight').value = '';
+                } else {
+                    document.getElementById('weight').value = lastLog.weight || '';
+                }
+                document.getElementById('reps').value = lastLog.reps || '';
+                document.getElementById('sets').value = lastLog.sets || '';
+            }
         }
 
         function saveLog() {
@@ -194,7 +226,6 @@
             const exercise = document.getElementById('exercise').value;
             if (!exercise) { alert('種目名を入力してください'); return; }
 
-            // ★変更: 自重チェックが入っていたら「自重」というフラグを持たせる
             const isBodyweight = document.getElementById('isBodyweight').checked;
 
             const log = {
@@ -219,7 +250,7 @@
             document.getElementById('reps').value = '';
             document.getElementById('sets').value = '';
             document.getElementById('isBodyweight').checked = false;
-            toggleWeightInput(); // グレーアウトを解除
+            toggleWeightInput(); // 表示状態に戻す
         }
 
         function deleteLog(index) {
@@ -240,7 +271,6 @@
                 const itemDiv = document.createElement('div');
                 itemDiv.className = 'log-item';
                 
-                // ★変更: 自重トレの場合は「〇〇kg」ではなく「自重」と表示する
                 const weightDisplay = log.isBodyweight ? '自重' : `${log.weight}kg`;
 
                 itemDiv.innerHTML = `

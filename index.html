@@ -2,41 +2,174 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>筋トレ記録アプリ</title>
     <style>
-        body { font-family: sans-serif; max-width: 500px; margin: 20px auto; padding: 20px; background-color: #f4f7f6; }
-        .form-group { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        input, select { width: 100%; padding: 10px; margin: 5px 0 10px; box-sizing: border-box; }
-        button { width: 100%; padding: 10px; background-color: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; }
-        .log-item { background: white; padding: 10px; margin-top: 10px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; }
+        /* 全体のリセット */
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
+            margin: 0;
+            padding: 10px; /* 画面端に少し余白を持たせる */
+            background-color: #f4f7f6;
+            color: #333;
+            /* ★変更: PC/モバイル問わず画面中央寄せにしつつ、最大幅を少し大きく設定 */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px; /* PCでの最大幅を少し広げる */
+        }
+
+        h2 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+
+        .form-group {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+
+        /* ★変更: ラベルを目立たせる（スマホで見やすく） */
+        label {
+            display: block;
+            font-size: 12px;
+            color: #7f8c8d;
+            margin-bottom: 2px;
+            margin-top: 8px;
+        }
+        label:first-child { margin-top: 0; }
+
+        /* ★変更: 入力欄をモバイル向けに大きく設計 */
+        input, select {
+            width: 100%;
+            padding: 12px;
+            margin: 0; /* マージンをリセットし、隙間は親要素のpaddingで管理 */
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px; /* スマホで入力時に拡大されないフォントサイズ */
+            background-color: #fff;
+        }
+
+        /* 新しい種目名の入力欄のデザイン調整 */
+        #exercise {
+            margin-top: 5px;
+            border-color: #3498db; /* 青枠で強調 */
+        }
+
+        button.save-btn {
+            width: 100%;
+            padding: 15px;
+            margin-top: 20px;
+            background-color: #27ae60;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        button.save-btn:active { background-color: #219150; }
+
+        #logList {
+            width: 100%;
+        }
+
+        .log-item {
+            background: white;
+            padding: 12px 15px;
+            margin-bottom: 8px;
+            border-radius: 6px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            /* ★重要: スマホで要素が折り返さないレイアウト */
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .log-data {
+            flex-grow: 1;
+            padding-right: 10px;
+            word-break: break-all; /* 長い種目名が折り返るように */
+        }
+
+        .log-date { font-size: 12px; color: #7f8c8d; }
+        .log-exercise { font-weight: bold; font-size: 16px; margin: 2px 0; display: block; }
+        .log-details { font-size: 14px; color: #555; }
+
+        button.delete-btn {
+            padding: 6px 12px;
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            flex-shrink: 0; /* ボタンが縮まないように */
+        }
     </style>
 </head>
 <body>
 
-    <h2>💪 筋トレログ</h2>
-    <div class="form-group">
-        <input type="date" id="date">
-        <select id="exerciseSelect" onchange="updateExerciseInput()">
-            <option value="">-- 種目を選択 --</option>
-        </select>
-        <input type="text" id="exercise" placeholder="新しい種目名を入力">
-        <input type="number" id="weight" placeholder="重量(kg)">
-        <input type="number" id="reps" placeholder="回数">
-        <input type="number" id="sets" placeholder="セット数">
-        <button onclick="saveLog()">記録する</button>
+    <div class="container">
+        <h2>💪 筋トレログ</h2>
+        <div class="form-group">
+            <label>日付</label>
+            <input type="date" id="date">
+            
+            <label>過去の種目から選択</label>
+            <select id="exerciseSelect" onchange="updateExerciseInput()">
+                <option value="">-- 選択してください --</option>
+            </select>
+
+            <label>新しい種目名（直接入力または編集）</label>
+            <input type="text" id="exercise" placeholder="例: ベンチプレス">
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
+                <div>
+                    <label>重量(kg)</label>
+                    <input type="number" id="weight" placeholder="0">
+                </div>
+                <div>
+                    <label>回数</label>
+                    <input type="number" id="reps" placeholder="0">
+                </div>
+                <div>
+                    <label>セット数</label>
+                    <input type="number" id="sets" placeholder="0">
+                </div>
+            </div>
+
+            <button class="save-btn" onclick="saveLog()">記録を保存</button>
+        </div>
+
+        <div id="logList"></div>
     </div>
 
-    <div id="logList"></div>
-
     <script>
+        // 初期設定: 日付を今日にする
+        document.getElementById('date').valueAsDate = new Date();
+
         window.onload = () => { displayLogs(); updateExerciseList(); };
 
         function updateExerciseList() {
             const logs = JSON.parse(localStorage.getItem('myWorkoutLogs') || '[]');
             const select = document.getElementById('exerciseSelect');
-            const exercises = [...new Set(logs.map(log => log.exercise))];
+            // 重複排除してソート
+            const exercises = [...new Set(logs.map(log => log.exercise))].sort();
             
-            select.innerHTML = '<option value="">-- 種目を選択 --</option>';
+            select.innerHTML = '<option value="">-- 選択してください --</option>';
             exercises.forEach(ex => {
                 select.innerHTML += `<option value="${ex}">${ex}</option>`;
             });
@@ -47,9 +180,13 @@
         }
 
         function saveLog() {
+            const date = document.getElementById('date').value;
+            const exercise = document.getElementById('exercise').value;
+            if (!exercise) { alert('種目名を入力してください'); return; }
+
             const log = {
-                date: document.getElementById('date').value,
-                exercise: document.getElementById('exercise').value,
+                date: date,
+                exercise: exercise,
                 weight: parseFloat(document.getElementById('weight').value) || 0,
                 reps: parseInt(document.getElementById('reps').value) || 0,
                 sets: parseInt(document.getElementById('sets').value) || 0
@@ -58,16 +195,30 @@
             let logs = JSON.parse(localStorage.getItem('myWorkoutLogs') || '[]');
             logs.unshift(log);
             localStorage.setItem('myWorkoutLogs', JSON.stringify(logs));
+            
             updateExerciseList();
             displayLogs();
+            // フォームをリセット（日付は今日に戻す）
+            document.getElementById('exerciseSelect').value = '';
+            document.getElementById('exercise').value = '';
+            document.getElementById('weight').value = '';
+            document.getElementById('reps').value = '';
+            document.getElementById('sets').value = '';
         }
 
         function deleteLog(index) {
+            if (!confirm('この記録を削除しますか？')) return;
             let logs = JSON.parse(localStorage.getItem('myWorkoutLogs') || '[]');
             logs.splice(index, 1);
             localStorage.setItem('myWorkoutLogs', JSON.stringify(logs));
             updateExerciseList();
             displayLogs();
+        }
+
+        // 日付の表示形式を日本語に調整する関数
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return `${date.getMonth() + 1}/${date.getDate()} (${['日','月','火','water','木','金','土'][date.getDay()]})`.replace('water','水');
         }
 
         function displayLogs() {
@@ -76,15 +227,17 @@
             logList.innerHTML = '';
 
             logs.forEach((log, index) => {
-                logList.innerHTML += `
-                    <div class="log-item">
-                        <div>
-                            <strong>${log.date}</strong>: ${log.exercise}<br>
-                            ${log.weight}kg / ${log.reps}回 x ${log.sets}セット
-                        </div>
-                        <button onclick="deleteLog(${index})" style="width: auto; background: #dc3545;">削除</button>
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'log-item';
+                itemDiv.innerHTML = `
+                    <div class="log-data">
+                        <span class="log-date">${formatDate(log.date)}</span>
+                        <span class="log-exercise">${log.exercise}</span>
+                        <span class="log-details">${log.weight}kg / ${log.reps}回 x ${log.sets}セット</span>
                     </div>
+                    <button class="delete-btn" onclick="deleteLog(${index})">削除</button>
                 `;
+                logList.appendChild(itemDiv);
             });
         }
     </script>
